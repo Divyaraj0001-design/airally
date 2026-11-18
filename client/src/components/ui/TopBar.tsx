@@ -1,4 +1,4 @@
-import { MapPin, RefreshCw, Sun, Moon, Info, ChevronDown } from 'lucide-react';
+import { MapPin, RefreshCw, Sun, Moon, Info, ChevronDown, Bell, BellOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useProfileStore } from '../../store/profileStore';
 import { useDataStore } from '../../store/dataStore';
@@ -18,7 +18,12 @@ const iconBtn = 'h-10 w-10 inline-flex items-center justify-center rounded-xl bo
 
 export default function TopBar({ page, onRefresh, onAbout }: { page: Page; onRefresh: () => void; onAbout: () => void }) {
   const { t } = useTranslation();
-  const { profile, setActiveLocation, setLanguage, toggleTheme } = useProfileStore();
+  const { profile, setActiveLocation, setLanguage, toggleTheme, setProfile } = useProfileStore();
+  const alertsOn = profile.alerts.enabled;
+  const toggleAlerts = async () => {
+    try { if (!alertsOn && typeof Notification !== 'undefined' && Notification.permission === 'default') await Notification.requestPermission(); } catch { /* ignore */ }
+    setProfile({ alerts: { ...profile.alerts, enabled: !alertsOn } });
+  };
   const loading = useDataStore((s) => s.isLoadingAQ);
   const navItem = NAV_ITEMS.find((n) => n.id === page);
   const title = navItem ? t(navItem.key) : 'Data & methods';
@@ -40,11 +45,15 @@ export default function TopBar({ page, onRefresh, onAbout }: { page: Page; onRef
         </label>
 
         <div className="flex items-center gap-2 lg:ml-auto">
-          <button onClick={onRefresh} aria-label="Refresh data" className={iconBtn}><RefreshCw size={16} className={loading ? 'animate-spin' : ''} /></button>
-          <button onClick={() => setLanguage(profile.language === 'en' ? 'hi' : 'en')} aria-label="Switch language" className={`${iconBtn} text-xs font-bold`}>{profile.language === 'en' ? 'हिं' : 'EN'}</button>
-          <button onClick={toggleTheme} aria-label="Toggle dark / light theme" className={iconBtn}>{profile.theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}</button>
-          <button onClick={onAbout} aria-label="Data sources and methodology" className={`${iconBtn} hidden sm:inline-flex`}><Info size={16} /></button>
-          <span aria-hidden="true" className="hidden md:inline-flex h-10 w-10 items-center justify-center rounded-full bg-lime text-[rgb(var(--lime-ink))] font-extrabold">{initial}</span>
+          <button onClick={onRefresh} aria-label="Refresh data" title="Refresh live data" className={iconBtn}><RefreshCw size={16} className={loading ? 'animate-spin' : ''} /></button>
+          <button onClick={() => setLanguage(profile.language === 'en' ? 'hi' : 'en')} aria-label="Switch language" title={profile.language === 'en' ? 'हिन्दी में बदलें' : 'Switch to English'} className={`${iconBtn} text-xs font-bold`}>{profile.language === 'en' ? 'हिं' : 'EN'}</button>
+          <button onClick={toggleAlerts} aria-label={alertsOn ? 'Turn alerts off' : 'Turn alerts on'} aria-pressed={alertsOn} title={alertsOn ? `Alerts on (AQI > ${profile.alerts.threshold}) — click to turn off` : 'Turn on AQI alerts'} className={`${iconBtn} relative`}>
+            {alertsOn ? <Bell size={16} /> : <BellOff size={16} className="text-fg/50" />}
+            {alertsOn && <span className="absolute top-2 right-2.5 h-2 w-2 rounded-full bg-lime ring-2 ring-surface" aria-hidden="true" />}
+          </button>
+          <button onClick={toggleTheme} aria-label="Toggle dark / light theme" title={profile.theme === 'dark' ? 'Light mode' : 'Dark mode'} className={iconBtn}>{profile.theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}</button>
+          <button onClick={onAbout} aria-label="Data sources and methodology" title="Data sources & methodology" className={`${iconBtn} hidden sm:inline-flex`}><Info size={16} /></button>
+          <button onClick={onAbout} aria-label="Profile and saved locations" title="Profile & saved locations" className="hidden md:inline-flex h-10 w-10 items-center justify-center rounded-full bg-lime text-[rgb(var(--lime-ink))] font-extrabold hover:ring-2 hover:ring-fg/30 transition-all">{initial}</button>
         </div>
       </div>
     </header>
