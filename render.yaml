@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: airally-api
+    runtime: node
+    rootDir: server
+    plan: free
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-flash-latest
+      - key: GEMINI_FALLBACK_MODELS
+        value: gemini-3-flash-preview,gemini-3.5-flash,gemini-flash-lite-latest
+      - key: WAQI_TOKEN
+        sync: false
+      - key: CLIENT_ORIGIN
+        sync: false
