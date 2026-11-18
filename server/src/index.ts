@@ -9,7 +9,7 @@ import { airQualityRouter } from './routes/airQuality';
 import { weatherRouter } from './routes/weather';
 import { geocodeRouter } from './routes/geocode';
 import { overpassRouter } from './routes/overpass';
-import { geminiRouter } from './routes/gemini';
+import { aiRouter } from './routes/ai';
 import { impactRouter } from './routes/impact';
 import { waqiRouter } from './routes/waqi';
 
@@ -58,7 +58,8 @@ app.get('/api/health', (_req, res) => {
     timestamp: new Date().toISOString(),
     version: '1.0.0',
     services: {
-      gemini: !!process.env.GEMINI_API_KEY,
+      ai: !!process.env.GROQ_API_KEY,
+      groq: !!process.env.GROQ_API_KEY,
       waqi: !!process.env.WAQI_TOKEN,
     },
   });
@@ -69,7 +70,7 @@ app.use('/api/air-quality', airQualityRouter);
 app.use('/api/weather', weatherRouter);
 app.use('/api/geocode', geocodeRouter);
 app.use('/api/overpass', overpassRouter);
-app.use('/api/gemini', geminiRouter);
+app.use('/api/ai', aiRouter);
 app.use('/api/impact', impactRouter);
 app.use('/api/waqi', waqiRouter);
 
@@ -81,7 +82,7 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
 
 app.listen(PORT, () => {
   console.log(`🌿 AirAlly server running on port ${PORT}`);
-  console.log(`   Gemini: ${process.env.GEMINI_API_KEY ? '✓' : '✗ NOT SET'}`);
+  console.log(`   Groq:   ${process.env.GROQ_API_KEY ? '✓' : '✗ NOT SET (add GROQ_API_KEY to server/.env)'}`);
   console.log(`   WAQI:   ${process.env.WAQI_TOKEN ? '✓' : '(optional, not set)'}`);
 });
 

@@ -10,6 +10,8 @@ export default {
         canvas: 'rgb(var(--base) / <alpha-value>)',
         brand: 'rgb(var(--brand) / <alpha-value>)',
         accent: 'rgb(var(--accent) / <alpha-value>)',
+        lime: 'rgb(var(--lime) / <alpha-value>)',
+        surface: 'rgb(var(--surface) / <alpha-value>)',
       },
       keyframes: { float: { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-8px)' } } },
       animation: { float: 'float 6s ease-in-out infinite' },

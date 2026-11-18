@@ -23,29 +23,29 @@ export const api = {
     fetchWithError(`${BASE}/api/overpass/nearby?lat=${lat}&lon=${lon}&radius=${radius}`),
   waqiStation: (lat: number, lon: number) =>
     fetchWithError(`${BASE}/api/waqi/station?lat=${lat}&lon=${lon}`),
-  gemini: {
+  ai: {
     dailyPlan: (body: object) =>
-      fetchWithError(`${BASE}/api/gemini/daily-plan`, {
+      fetchWithError(`${BASE}/api/ai/daily-plan`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
       }),
     indoorHacks: (body: object) =>
-      fetchWithError(`${BASE}/api/gemini/indoor-hacks`, {
+      fetchWithError(`${BASE}/api/ai/indoor-hacks`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
       }),
     alternatives: (body: object) =>
-      fetchWithError(`${BASE}/api/gemini/alternatives`, {
+      fetchWithError(`${BASE}/api/ai/alternatives`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
       }),
     explainImpact: (body: object) =>
-      fetchWithError(`${BASE}/api/gemini/explain-impact`, {
+      fetchWithError(`${BASE}/api/ai/explain-impact`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
       }),
     whySmog: (body: object) =>
-      fetchWithError(`${BASE}/api/gemini/why-smog`, {
+      fetchWithError(`${BASE}/api/ai/why-smog`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
       }),
     suggestedQuestions: (body: object) =>
-      fetchWithError(`${BASE}/api/gemini/suggested-questions`, {
+      fetchWithError(`${BASE}/api/ai/suggested-questions`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
       }),
     chatStream: async (
@@ -55,7 +55,7 @@ export const api = {
     ) => {
       let r: Response;
       try {
-        r = await fetch(`${BASE}/api/gemini/chat`, {
+        r = await fetch(`${BASE}/api/ai/chat`, {
           method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal,
         });
       } catch (e: any) { if (e?.name !== 'AbortError') h.onError('Network error — are you offline?'); return; }

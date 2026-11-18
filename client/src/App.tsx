@@ -13,6 +13,7 @@ const Impact = lazy(() => import('./components/impact/Impact'));
 const Chat = lazy(() => import('./components/chat/Chat'));
 const About = lazy(() => import('./components/about/About'));
 import BottomNav from './components/ui/BottomNav';
+import Sidebar from './components/ui/Sidebar';
 import AlertBanner from './components/ui/AlertBanner';
 import TopBar from './components/ui/TopBar';
 import Footer from './components/ui/Footer';
@@ -51,20 +52,22 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-dvh flex flex-col">
-      <div className="aurora" aria-hidden="true"><i /><i /><i /></div>
+    <div className="min-h-dvh lg:flex">
       <a href="#main" className="sr-only-focusable absolute left-2 top-2 z-50 btn-primary">Skip to content</a>
-      <TopBar onRefresh={fetchAll} onAbout={() => setPage('about')} />
-      {!online && <div role="status" className="bg-red-500/20 border-b border-red-400/40 text-sm px-4 py-2 flex items-center gap-2 justify-center"><WifiOff size={14} />You are offline — live data can’t refresh. Showing what was last loaded.</div>}
-      <AlertBanner />
-      <main id="main" className="flex-1 pb-24">
-        <AnimatePresence mode="wait">
-          <motion.div key={page} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
-            <Suspense fallback={<div className="mx-auto max-w-3xl p-6" role="status" aria-label="Loading"><div className="skeleton h-64" /></div>}>{view[page]}</Suspense>
-            {page !== 'chat' && <Footer onAbout={() => setPage('about')} />}
-          </motion.div>
-        </AnimatePresence>
-      </main>
+      <Sidebar current={page === 'about' ? 'about' : page} onChange={setPage} />
+      <div className="flex-1 min-w-0 flex flex-col min-h-dvh">
+        <TopBar page={page} onRefresh={fetchAll} onAbout={() => setPage('about')} />
+        {!online && <div role="status" className="bg-red-500/15 border-y border-red-400/30 text-sm px-4 py-2 flex items-center gap-2 justify-center"><WifiOff size={14} />You are offline — live data can’t refresh. Showing what was last loaded.</div>}
+        <AlertBanner />
+        <main id="main" className="flex-1 pb-28 lg:pb-8">
+          <AnimatePresence mode="wait">
+            <motion.div key={page} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
+              <Suspense fallback={<div className="mx-auto max-w-4xl p-6" role="status" aria-label="Loading"><div className="skeleton h-64" /></div>}>{view[page]}</Suspense>
+              {page !== 'chat' && <Footer onAbout={() => setPage('about')} />}
+            </motion.div>
+          </AnimatePresence>
+        </main>
+      </div>
       <BottomNav current={page === 'about' ? 'dashboard' : page} onChange={setPage} />
     </div>
   );

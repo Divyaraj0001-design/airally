@@ -46,7 +46,7 @@ export default function Onboarding() {
       </div>
       <div className="mb-6">
         <p className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight">Breathe smarter. <span className="text-gradient">Live smog, personal plan.</span></p>
-        <p className="text-fg/70 text-sm mt-2">{t('app.tagline')} — personal, location-aware guidance powered by live data and Gemini.</p>
+        <p className="text-fg/70 text-sm mt-2">{t('app.tagline')} — personal, location-aware guidance powered by live data and Groq.</p>
       </div>
 
       <ol className="flex gap-2 mb-6" aria-label="Progress">

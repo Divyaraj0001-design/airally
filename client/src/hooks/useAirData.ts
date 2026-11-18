@@ -34,7 +34,7 @@ export function useAirData() {
         api.overpassNearby(lat, lon, 3000).then((n) => live() && d.setNearby(n)).catch((e: Error) => d.setErrorNearby(e.message)),
         api.waqiStation(lat, lon).then((w) => live() && d.setWaqi(w.available === false ? null : w)).catch(() => d.setWaqi(null)),
         aq && wx
-          ? api.gemini.whySmog({ airQuality: aq, weather: wx, profile: { language: lang } })
+          ? api.ai.whySmog({ airQuality: aq, weather: wx, profile: { language: lang } })
               .then((r: { explanation: string }) => live() && d.setSmogExplanation(r.explanation))
               .catch((e: Error) => d.setErrorSmog(e.message))
           : Promise.resolve(),

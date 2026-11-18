@@ -12,8 +12,8 @@ export default defineConfig({
         name: 'AirAlly — Urban Air Quality Assistant',
         short_name: 'AirAlly',
         description: 'GenAI-powered air quality assistant for families',
-        theme_color: '#0f172a',
-        background_color: '#0f172a',
+        theme_color: '#a8d654',
+        background_color: '#ebedf0',
         display: 'standalone',
         start_url: '/',
         icons: [

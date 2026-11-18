@@ -14,8 +14,8 @@ export default function AqiGauge({ value, label, emoji }: { value: number; label
     return { x1: 100 + Math.cos(a) * 94, y1: 100 + Math.sin(a) * 94, x2: 100 + Math.cos(a) * 99, y2: 100 + Math.sin(a) * 99 };
   });
   return (
-    <div className="relative mx-auto w-64 h-64 sm:w-72 sm:h-72" role="img" aria-label={`US AQI ${value}, ${label}`}>
-      <div className="absolute inset-6 rounded-full blur-3xl opacity-40" style={{ background: color }} aria-hidden="true" />
+    <div className="relative mx-auto w-60 h-60 sm:w-64 sm:h-64" role="img" aria-label={`US AQI ${value}, ${label}`}>
+      <div className="absolute inset-6 rounded-full blur-3xl opacity-25" style={{ background: color }} aria-hidden="true" />
       <span className="absolute inset-10 rounded-full border-2 animate-[pulse-ring_2.6s_ease-out_infinite]" style={{ borderColor: color }} aria-hidden="true" />
       <svg viewBox="0 0 200 200" className="relative w-full h-full overflow-visible">
         <defs>

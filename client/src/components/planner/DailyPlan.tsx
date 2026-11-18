@@ -27,7 +27,7 @@ export default function DailyPlan() {
 
   const key = aq ? `${loc.lat.toFixed(2)},${loc.lon.toFixed(2)}|${aq.current.time.slice(0, 13)}|${profileKey(profile)}` : null;
   const { data: plan, loading, error, regenerate } = useAiResource<any>('plan', key, () =>
-    api.gemini.dailyPlan({ airQuality: aq, weather, nearbyPlaces: nearby, profile: aiProfile(profile) }));
+    api.ai.dailyPlan({ airQuality: aq, weather, nearbyPlaces: nearby, profile: aiProfile(profile) }));
 
   if (!aq) return <EmptyState icon={<Clock size={32} />} title="Waiting for live air data" hint="Open the Dashboard to load your location first." />;
 
@@ -35,7 +35,7 @@ export default function DailyPlan() {
   const dayLabel = (d: 'today' | 'tomorrow') => d === 'today' ? t('plan.today') : t('plan.tomorrow');
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-5 space-y-4">
+    <div className="mx-auto max-w-4xl px-4 py-5 space-y-4">
       <div className="flex items-center justify-between gap-2">
         <h1 className="text-xl font-extrabold flex items-center gap-2"><Sparkles size={20} className="text-brand" />{t('plan.title')}</h1>
         <button className="btn-ghost" onClick={() => regenerate()} disabled={loading} aria-label="Regenerate plan"><RefreshCw size={14} className={loading ? 'animate-spin' : ''} /></button>
@@ -118,7 +118,7 @@ export default function DailyPlan() {
             ))}
           </ul>
         </Card>
-        <p className="text-xs text-fg/50">Numbers shown (PM2.5 per hour and windows) come straight from the live Open-Meteo forecast; Gemini writes the advice around them. Forecasts can change — the plan refreshes hourly. Current PM2.5 <strong style={{ color: aqiColor(aq.current.usAqi) }}>{aq.current.pm2_5.toFixed(0)}</strong> µg/m³.</p>
+        <p className="text-xs text-fg/50">Numbers shown (PM2.5 per hour and windows) come straight from the live Open-Meteo forecast; Groq writes the advice around them. Forecasts can change — the plan refreshes hourly. Current PM2.5 <strong style={{ color: aqiColor(aq.current.usAqi) }}>{aq.current.pm2_5.toFixed(0)}</strong> µg/m³.</p>
         <Disclaimer />
       </>)}
     </div>

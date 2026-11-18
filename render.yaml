@@ -10,12 +10,12 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 20
-      - key: GEMINI_API_KEY
+      - key: GROQ_API_KEY
         sync: false
-      - key: GEMINI_MODEL
-        value: gemini-flash-latest
-      - key: GEMINI_FALLBACK_MODELS
-        value: gemini-3-flash-preview,gemini-3.5-flash,gemini-flash-lite-latest
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
+      - key: GROQ_FALLBACK_MODELS
+        value: llama-3.1-8b-instant,openai/gpt-oss-20b
       - key: WAQI_TOKEN
         sync: false
       - key: CLIENT_ORIGIN

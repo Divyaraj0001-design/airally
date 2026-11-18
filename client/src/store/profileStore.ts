@@ -82,7 +82,7 @@ const DEFAULT_PROFILE: UserProfile = {
   onboardingComplete: false,
   completed: [],
   hepa: { installedAt: null, lifeHours: 4380, hoursPerDay: 12 },
-  theme: 'dark',
+  theme: 'light',
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };

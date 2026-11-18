@@ -92,7 +92,7 @@ export default function Impact() {
   const explainNow = () => {
     if (!res) return;
     setExplain({ loading: true });
-    api.gemini.explainImpact({
+    api.ai.explainImpact({
       profile: aiProfile(profile),
       impactData: {
         ambientPm2_5: aq?.current.pm2_5, memberAgeGroup: age, inhalationRate_m3h: res.inhalation_m3h,
@@ -106,7 +106,7 @@ export default function Impact() {
   if (!aq) return <EmptyState icon={<Scale size={32} />} title="Waiting for live air data" hint="Open the Dashboard first." />;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-5 space-y-4">
+    <div className="mx-auto max-w-4xl px-4 py-5 space-y-4">
       <h1 className="text-xl font-extrabold flex items-center gap-2"><Scale size={20} className="text-brand" />{t('impact.title')}</h1>
       <p className="text-sm text-fg/70">See how each choice changes the amount of PM2.5 you actually breathe in. Numbers come from a documented formula applied to live data — <strong>not</strong> from the AI.</p>
 
@@ -159,7 +159,7 @@ export default function Impact() {
       {res && (
         <Card>
           <SectionTitle icon={<Sparkles size={16} className="text-brand" />} right={<button className="btn-primary !py-1.5" onClick={explainNow} disabled={explain.loading}>Explain in plain language</button>}>AI explanation</SectionTitle>
-          {explain.loading && <Spinner label="Gemini is explaining the numbers…" />}
+          {explain.loading && <Spinner label="Groq is explaining the numbers…" />}
           {explain.error && <ErrorState message={explain.error} onRetry={explainNow} compact />}
           {explain.data && (
             <div className="space-y-3 text-sm">
@@ -170,7 +170,7 @@ export default function Impact() {
               <p className="text-fg/60 text-xs">⚠ {explain.data.uncertainty}</p>
             </div>
           )}
-          {!explain.data && !explain.loading && !explain.error && <p className="text-sm text-fg/60">Gemini will restate the engine’s numbers in friendly words for kids and elders — it can’t change them.</p>}
+          {!explain.data && !explain.loading && !explain.error && <p className="text-sm text-fg/60">Groq will restate the engine’s numbers in friendly words for kids and elders — it can’t change them.</p>}
         </Card>
       )}
 

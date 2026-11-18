@@ -56,7 +56,7 @@ const en = {
     "offline": "You are offline. Showing last known data."
   },
   "disclaimer": "AirAlly provides air quality information based on published guidelines. This is NOT medical advice. For health symptoms, consult a doctor immediately.",
-  "attribution": "Data: Open-Meteo (CC BY 4.0) · OpenStreetMap contributors (ODbL) · AI: Google Gemini · WAQI"
+  "attribution": "Data: Open-Meteo (CC BY 4.0) · OpenStreetMap contributors (ODbL) · AI: Groq · WAQI"
 };
 
 const hi = {
@@ -114,7 +114,7 @@ const hi = {
     "offline": "आप ऑफलाइन हैं।"
   },
   "disclaimer": "एयरअली प्रकाशित दिशानिर्देशों के आधार पर वायु गुणवत्ता की जानकारी प्रदान करता है। यह चिकित्सा सलाह नहीं है।",
-  "attribution": "डेटा: Open-Meteo · OpenStreetMap · AI: Google Gemini · WAQI"
+  "attribution": "डेटा: Open-Meteo · OpenStreetMap · AI: Groq · WAQI"
 };
 
 i18n.use(initReactI18next).init({

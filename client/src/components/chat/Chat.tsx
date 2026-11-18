@@ -42,7 +42,7 @@ export default function Chat() {
   const loc = profile.locations[profile.activeLocationIndex];
 
   const sqKey = aq ? `${loc.lat.toFixed(2)}|${Math.round(aq.current.pm2_5 / 10)}|${profile.language}|${JSON.stringify(profile.household)}` : null;
-  const sq = useAiResource<{ questions: string[] }>('sq', sqKey, () => api.gemini.suggestedQuestions({ airQuality: aq, profile: aiProfile(profile) }));
+  const sq = useAiResource<{ questions: string[] }>('sq', sqKey, () => api.ai.suggestedQuestions({ airQuality: aq, profile: aiProfile(profile) }));
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }); }, [msgs]);
   useEffect(() => () => { abortRef.current?.abort(); recRef.current?.stop?.(); window.speechSynthesis?.cancel(); }, []);
@@ -56,7 +56,7 @@ export default function Chat() {
     set({ msgs: base, busy: true });
     const patch = (fn: (m: Msg) => Msg) => { const cur = [...useChat.getState().msgs]; cur[cur.length - 1] = fn(cur[cur.length - 1]); set({ msgs: cur }); };
     abortRef.current = new AbortController();
-    await api.gemini.chatStream(
+    await api.ai.chatStream(
       { message: q, history, profile: aiProfile(profile), airQuality: aq, weather, placeName: loc.name },
       {
         onText: (x) => patch((m) => ({ ...m, content: m.content + x })),
@@ -90,7 +90,7 @@ export default function Chat() {
   if (!aq) return <EmptyState icon={<Globe size={32} />} title="Waiting for live air data" hint="Open the Dashboard first so I can see your air." />;
 
   return (
-    <div className="mx-auto max-w-3xl px-4 pt-5 flex flex-col" style={{ minHeight: 'calc(100dvh - 8.5rem)' }}>
+    <div className="mx-auto max-w-4xl px-4 pt-5 flex flex-col" style={{ minHeight: 'calc(100dvh - 9rem)' }}>
       <div className="flex items-center justify-between mb-3">
         <h1 className="text-xl font-extrabold">💬 {t('chat.title')}</h1>
         {msgs.length > 0 && <button className="btn-ghost" onClick={() => { abortRef.current?.abort(); window.speechSynthesis?.cancel(); set({ msgs: [], busy: false }); }} aria-label="Clear chat"><Trash2 size={14} /></button>}
@@ -105,7 +105,7 @@ export default function Chat() {
         )}
         {msgs.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[88%] rounded-2xl px-4 py-2.5 ${m.role === 'user' ? 'bg-brand text-canvas' : m.error ? 'border border-red-400/40 bg-red-500/10' : 'glass'}`}>
+            <div className={`max-w-[88%] rounded-2xl px-4 py-2.5 ${m.role === 'user' ? 'bg-fg text-canvas' : m.error ? 'border border-red-400/40 bg-red-500/10' : 'glass'}`}>
               {m.tools?.map((x, k) => <p key={k} className="text-xs text-brand font-semibold flex items-center gap-1.5 mb-1"><Globe size={12} />{x}…</p>)}
               {m.role === 'user' ? <p className="text-sm whitespace-pre-wrap">{m.content}</p>
                 : m.content ? <Md text={m.content} />
@@ -121,7 +121,7 @@ export default function Chat() {
         <div ref={endRef} />
       </div>
 
-      <div className="sticky bottom-[4.25rem] bg-gradient-to-t from-canvas via-canvas/80 to-transparent pt-4 pb-2">
+      <div className="sticky bottom-[4.25rem] lg:bottom-0 bg-gradient-to-t from-canvas via-canvas/80 to-transparent pt-4 pb-2">
         {msgs.length === 0 && (
           <div className="mb-2" aria-label={t('chat.suggestions')}>
             {sq.loading && <div className="flex gap-2"><Skeleton className="h-8 w-40" /><Skeleton className="h-8 w-48" /></div>}

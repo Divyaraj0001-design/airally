@@ -56,10 +56,10 @@ export default function Alternatives() {
   const ready = !!aq && !isLoadingNearby && table !== null;
   const key = ready ? `${profile.locations[profile.activeLocationIndex].lat.toFixed(2)}|${nearby ? nearby.total : 'x'}|${profileKey(profile)}` : null;
   const { data, loading, error, regenerate } = useAiResource<any>('alt', key, () =>
-    api.gemini.alternatives({ profile: aiProfile(profile), nearbyPlaces: nearby, emissions: table?.slice(0, 5).map((x) => ({ from: x.currentMode.mode, to: x.alternativeMode.mode, roundTripKm: x.distanceKm, co2SavedPerDay_g: x.co2SavedPerTrip_g, pmSavedPerDay_mg: x.pmSavedPerTrip_mg })) }));
+    api.ai.alternatives({ profile: aiProfile(profile), nearbyPlaces: nearby, emissions: table?.slice(0, 5).map((x) => ({ from: x.currentMode.mode, to: x.alternativeMode.mode, roundTripKm: x.distanceKm, co2SavedPerDay_g: x.co2SavedPerTrip_g, pmSavedPerDay_mg: x.pmSavedPerTrip_mg })) }));
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-5 space-y-4">
+    <div className="mx-auto max-w-4xl px-4 py-5 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-extrabold flex items-center gap-2"><Leaf size={20} className="text-brand" />{t('alternatives.title')}</h1>
         <button className="btn-ghost" onClick={() => regenerate()} disabled={loading || !ready} aria-label="Regenerate"><RefreshCw size={14} className={loading ? 'animate-spin' : ''} /></button>
@@ -82,7 +82,7 @@ export default function Alternatives() {
       )}
       {tableErr && <ErrorState compact message={tableErr} />}
 
-      {ready && loading && !data && <Card><Spinner label="Gemini is finding realistic alternatives near you…" /><Skeleton className="h-20 mb-2" /><Skeleton className="h-20" /></Card>}
+      {ready && loading && !data && <Card><Spinner label="Groq is finding realistic alternatives near you…" /><Skeleton className="h-20 mb-2" /><Skeleton className="h-20" /></Card>}
       {error && <ErrorState message={error} onRetry={() => regenerate()} />}
       {data && (<>
         <Card><p className="font-semibold leading-relaxed">{data.summary}</p></Card>

@@ -108,10 +108,10 @@ export default function IndoorHacks() {
   const loc = profile.locations[profile.activeLocationIndex];
   const key = aq ? `${loc.lat.toFixed(2)},${loc.lon.toFixed(2)}|${aq.current.time.slice(0, 10)}|${profileKey(profile)}` : null;
   const { data, loading, error, regenerate } = useAiResource<any>('indoor', key, () =>
-    api.gemini.indoorHacks({ airQuality: aq, profile: aiProfile(profile), roomArea: profile.lifestyle.roomArea }));
+    api.ai.indoorHacks({ airQuality: aq, profile: aiProfile(profile), roomArea: profile.lifestyle.roomArea }));
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-5 space-y-4">
+    <div className="mx-auto max-w-4xl px-4 py-5 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-extrabold flex items-center gap-2"><Home size={20} className="text-brand" />{t('indoor.title')}</h1>
         <button className="btn-ghost" onClick={() => regenerate()} disabled={loading || !aq} aria-label="Regenerate indoor tips"><RefreshCw size={14} className={loading ? 'animate-spin' : ''} /></button>
@@ -121,7 +121,7 @@ export default function IndoorHacks() {
 
       <RoomCalculator />
 
-      {loading && !data && <Card><Spinner label="Gemini is building your personalised indoor plan…" /><Skeleton className="h-16 mb-2" /><Skeleton className="h-16" /></Card>}
+      {loading && !data && <Card><Spinner label="Groq is building your personalised indoor plan…" /><Skeleton className="h-16 mb-2" /><Skeleton className="h-16" /></Card>}
       {error && <ErrorState message={error} onRetry={() => regenerate()} />}
 
       {data && (<>

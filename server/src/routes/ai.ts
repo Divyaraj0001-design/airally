@@ -1,12 +1,11 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-import { Type } from '@google/genai';
 import { z } from 'zod';
 import { aiCache } from '../lib/cache';
 import {
   getAI, MODELS, isOverload, SYSTEM_PROMPT, langLine, sanitizeText, looksLikeInjection,
   hashObj, generateJson, generateText,
-} from '../lib/gemini';
+} from '../lib/ai';
 import { getAirQuality, geocodeCity } from '../lib/liveData';
 import { bestWindows, hourlyFor, addDays } from '../lib/windows';
 
@@ -20,7 +19,8 @@ const aiLimiter = rateLimit({
   message: { error: 'AI rate limit reached. Please wait a minute.' },
 });
 
-const S = Type.STRING, N = Type.NUMBER, I = Type.INTEGER, B = Type.BOOLEAN, O = Type.OBJECT, A = Type.ARRAY;
+// Plain JSON-Schema type names (sent to the model as the required output format)
+const S = 'string', I = 'integer', B = 'boolean', O = 'object', A = 'array';
 
 /** Strip the profile down to what the model needs (token-efficient + privacy-minimal). */
 function slimProfile(p: any) {
@@ -46,13 +46,13 @@ function slimProfile(p: any) {
 }
 
 const fail = (res: express.Response, label: string, err: any) => {
-  console.error(`[Gemini ${label}]`, err?.message);
+  console.error(`[AI ${label}]`, err?.message);
   const msg = String(err?.message || '');
-  const status = /429|quota/i.test(msg) ? 429 : 502;
+  const status = /\b429\b|rate.?limit/i.test(msg) ? 429 : 502;
   return res.status(status).json({
-    error: /API key/i.test(msg) ? 'AI service is not configured correctly (invalid API key).' : `${label} failed`,
+    error: /API key|\b401\b|not configured/i.test(msg) ? 'AI service is not configured correctly (missing or invalid GROQ_API_KEY).' : `${label} failed`,
     detail: msg.slice(0, 300),
-    retryable: status !== 502 || !/API key/i.test(msg),
+    retryable: !/API key|\b401\b|not configured/i.test(msg),
   });
 };
 
@@ -90,7 +90,7 @@ const DAILY_PLAN_SCHEMA = {
   required: ['summary', 'overallRisk', 'whyBadToday', 'today', 'tomorrow', 'memberAdvice', 'outdoorWindowReasons', 'ventilationTips', 'disclaimer'],
 };
 const zHour = z.object({
-  hour: z.number(), label: z.string(), activity: z.string(), advice: z.string(),
+  hour: z.coerce.number(), label: z.string(), activity: z.string(), advice: z.string(),
   maskNeeded: z.boolean(), maskType: z.string().optional().nullable(), icon: z.string(),
 });
 const zPlan = z.object({
@@ -200,7 +200,7 @@ const INDOOR_SCHEMA = {
   properties: {
     summary: { type: S },
     rankedActions: {
-      type: A,
+      type: A, minItems: 6, maxItems: 8,
       items: {
         type: O,
         properties: {
@@ -234,9 +234,9 @@ const INDOOR_SCHEMA = {
 const zIndoor = z.object({
   summary: z.string(),
   rankedActions: z.array(z.object({
-    rank: z.number(), action: z.string(), impact: z.string(), effort: z.string(), cost: z.string(),
+    rank: z.coerce.number(), action: z.string(), impact: z.string(), effort: z.string(), cost: z.string(),
     why: z.string().default(''), steps: z.array(z.string()),
-  })),
+  })).min(4),
   skipList: z.array(z.object({ item: z.string(), reason: z.string() })),
   purifier: z.object({ advice: z.string(), budgetOptions: z.array(z.string()).default([]), filterCareTips: z.array(z.string()) }),
   diyCorsiRosenthal: z.array(z.string()), cookingTips: z.array(z.string()), plantFacts: z.array(z.string()),
@@ -395,14 +395,18 @@ A deterministic Impact Engine (not you) computed the numbers below. Explain them
 // ============================================================
 // CHAT — streaming with real function calling
 // ============================================================
-const TOOLS: any[] = [{
-  functionDeclarations: [
-    {
+const TOOLS: any[] = [
+  {
+    type: 'function',
+    function: {
       name: 'fetch_city_aqi',
       description: 'Get the live air quality (PM2.5, PM10, US AQI, India NAQI) for any city in the world.',
       parameters: { type: O, properties: { city: { type: S, description: 'City name, e.g. "Mumbai"' } }, required: ['city'] },
     },
-    {
+  },
+  {
+    type: 'function',
+    function: {
       name: 'fetch_forecast',
       description: 'Get the hourly PM2.5 forecast summary and cleanest 2-hour windows for a city, for today or tomorrow (local time).',
       parameters: {
@@ -411,8 +415,8 @@ const TOOLS: any[] = [{
         required: ['city', 'day'],
       },
     },
-  ],
-}];
+  },
+];
 
 async function runTool(name: string, args: any): Promise<any> {
   const city = sanitizeText(args?.city, 80);
@@ -464,7 +468,7 @@ router.post('/chat', aiLimiter, async (req, res) => {
   const c = airQuality?.current;
   const ctx = {
     place: placeName, localTime: c?.time,
-    pm2_5: c?.pm2_5, pm10: c?.pm10, usAqi: c?.usAqi, indiaNAQI: airQuality?.naqi?.value,
+    pm2_5: c?.pm2_5, pm10: c?.pm10, usAqi: c?.usAqi, usCategory: airQuality?.usCategory?.label, indiaNAQI: airQuality?.naqi?.value,
     indiaCategory: airQuality?.naqi?.category, dominant: airQuality?.naqi?.dominantPollutant,
     weather: weather?.current && { tempC: weather.current.temperature, humidity: weather.current.humidity, windKmh: weather.current.windSpeed },
     profile: slimProfile(profile),
@@ -478,56 +482,68 @@ If the user asks about another city, or about a forecast / best time, CALL the t
 
   try {
     const ai = getAI();
-    const contents: any[] = [
+    const messages: any[] = [
+      { role: 'system', content: system },
       ...(Array.isArray(history) ? history : []).slice(-8).map((h: any) => ({
-        role: h.role === 'user' ? 'user' : 'model',
-        parts: [{ text: sanitizeText(h.content, 1500) }],
-      })).filter((h: any) => h.parts[0].text),
-      { role: 'user', parts: [{ text: sanitized }] },
+        role: h.role === 'user' ? 'user' : 'assistant',
+        content: sanitizeText(h.content, 1500),
+      })).filter((h: any) => h.content),
+      { role: 'user', content: sanitized },
     ];
 
     for (let round = 0; round < 4; round++) {
-      const calls: any[] = [];
-      const modelParts: any[] = [];
+      let text = '';
+      const calls: { id: string; name: string; args: string }[] = [];
       let emitted = false;
       let ok = false, lastErr: any;
       for (const model of MODELS()) {
         try {
-          const stream = await ai.models.generateContentStream({
-            model, contents,
-            config: { systemInstruction: system, tools: TOOLS, temperature: 0.5, maxOutputTokens: 2000 },
+          text = ''; calls.length = 0;
+          const stream = await ai.chat.completions.create({
+            model, messages, tools: TOOLS, tool_choice: 'auto', stream: true,
+            temperature: 0.5, max_completion_tokens: 2000,
           });
           for await (const chunk of stream) {
-            for (const part of chunk.candidates?.[0]?.content?.parts ?? []) {
-              if (part.functionCall) { calls.push(part.functionCall); modelParts.push(part); }
-              else if (part.text && !part.thought) { emitted = true; send({ text: part.text }); modelParts.push({ text: part.text }); }
+            const delta: any = chunk.choices?.[0]?.delta;
+            if (!delta) continue;
+            if (delta.content) { emitted = true; text += delta.content; send({ text: delta.content }); }
+            for (const tc of delta.tool_calls ?? []) {
+              const i = tc.index ?? 0;
+              calls[i] = calls[i] || { id: '', name: '', args: '' };
+              if (tc.id) calls[i].id = tc.id;
+              if (tc.function?.name) calls[i].name += tc.function.name;
+              if (tc.function?.arguments) calls[i].args += tc.function.arguments;
             }
           }
           ok = true; break;
         } catch (e) {
           lastErr = e;
           if (emitted || !isOverload(e)) throw e; // can't switch models mid-answer
-          calls.length = 0; modelParts.length = 0;
         }
       }
       if (!ok) throw lastErr;
-      if (!calls.length) break;
-      contents.push({ role: 'model', parts: modelParts });
-      const responses: any[] = [];
-      for (const fc of calls) {
-        send({ tool: fc.name, args: fc.args });
+      const valid = calls.filter((c) => c && c.name);
+      if (!valid.length) break;
+      messages.push({
+        role: 'assistant', content: text || null,
+        tool_calls: valid.map((c, i) => ({ id: c.id || `call_${round}_${i}`, type: 'function', function: { name: c.name, arguments: c.args || '{}' } })),
+      });
+      for (let i = 0; i < valid.length; i++) {
+        const fc = valid[i];
+        let args: any = {};
+        try { args = JSON.parse(fc.args || '{}'); } catch { args = {}; }
+        send({ tool: fc.name, args });
         let response: any;
-        try { response = await runTool(fc.name!, fc.args); }
+        try { response = await runTool(fc.name, args); }
         catch (e: any) { response = { error: `Live data fetch failed: ${String(e?.message).slice(0, 100)}` }; }
-        responses.push({ functionResponse: { name: fc.name, response } });
+        messages.push({ role: 'tool', tool_call_id: fc.id || `call_${round}_${i}`, content: JSON.stringify(response) });
       }
-      contents.push({ role: 'user', parts: responses });
     }
     send({ done: true });
     res.end();
   } catch (err: any) {
     console.error('[Chat Error]', err?.message);
-    send({ error: /API key/i.test(String(err?.message)) ? 'AI service is not configured correctly (invalid API key).' : 'The assistant could not answer right now. Please try again.' });
+    send({ error: /API key|\b401\b|not configured/i.test(String(err?.message)) ? 'AI service is not configured correctly (missing or invalid GROQ_API_KEY).' : 'The assistant could not answer right now. Please try again.' });
     res.end();
   }
 });
@@ -593,4 +609,4 @@ In ONE sentence (max 35 words), explain why the air is at this level right now, 
   }
 });
 
-export { router as geminiRouter };
+export { router as aiRouter };

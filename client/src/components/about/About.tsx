@@ -8,7 +8,7 @@ const SOURCES = [
   ['Weather & boundary layer', 'Open-Meteo Forecast API — temperature, humidity, wind, pressure, visibility, boundary-layer height (a proxy for inversion / pollutant trapping).', 'https://open-meteo.com/en/docs'],
   ['Ground-station AQI (optional)', 'World Air Quality Index project — nearest measuring station, shown next to the model. Hidden when unavailable.', 'https://waqi.info/'],
   ['Places, map tiles', 'OpenStreetMap contributors via Overpass API (parks, metro/rail, bus stops, cycle rental, clinics) and OSM tiles; reverse geocoding via Nominatim; city search via Open-Meteo Geocoding.', 'https://www.openstreetmap.org/copyright'],
-  ['AI reasoning', 'Google Gemini (structured JSON output validated with zod, streaming chat with function calling). Gemini writes advice around numbers computed elsewhere; it never produces the figures.', 'https://ai.google.dev/'],
+  ['AI reasoning', 'Groq (Llama 3.3 70B — structured JSON output validated with zod, streaming chat with function calling). Groq writes advice around numbers computed elsewhere; it never produces the figures.', 'https://groq.com/'],
 ] as const;
 
 const METHODS = [
@@ -24,7 +24,7 @@ const METHODS = [
 export default function About({ onBack }: { onBack: () => void }) {
   const { reset } = useProfileStore();
   return (
-    <div className="mx-auto max-w-3xl px-4 py-5 space-y-4">
+    <div className="mx-auto max-w-4xl px-4 py-5 space-y-4">
       <button className="btn-ghost" onClick={onBack}><ArrowLeft size={14} />Back</button>
       <h1 className="text-xl font-extrabold">Data sources &amp; methodology</h1>
       <Card><SectionTitle>Your locations</SectionTitle><LocationPicker /></Card>
