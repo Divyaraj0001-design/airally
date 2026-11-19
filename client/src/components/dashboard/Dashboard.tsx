@@ -274,7 +274,7 @@ export default function Dashboard({ onNavigate }: { onNavigate: (p: Page) => voi
               <SectionTitle icon={<Radio size={15} />}>{t('dashboard.groundStation')} vs {t('dashboard.modelData')}</SectionTitle>
               <div className="grid grid-cols-2 gap-3">
                 <div className="tile p-3.5"><p className="label">Ground station</p><p className="text-3xl font-extrabold tabular-nums" style={{ color: aqiColor(waqi.aqi) }}>{waqi.aqi}</p><p className="text-xs text-fg/60 truncate">{waqi.stationName}</p><p className="text-xs text-fg/60">PM2.5 {waqi.readings.pm2_5 ?? '—'} · {waqi.time}</p></div>
-                <div className="tile p-3.5"><p className="label">Model (Open-Meteo)</p><p className="text-3xl font-extrabold tabular-nums" style={{ color }}>{c.usAqi}</p><p className="text-xs text-fg/60">satellite + chemistry model</p><p className="text-xs text-fg/60">PM2.5 {c.pm2_5.toFixed(0)}</p></div>
+                <div className="tile p-3.5"><p className="label">Model (Open-Meteo)</p><p className="text-3xl font-extrabold tabular-nums" style={{ color: aqiColor((aq as any).source?.modelUsAqi ?? c.usAqi) }}>{(aq as any).source?.modelUsAqi ?? c.usAqi}</p><p className="text-xs text-fg/60">satellite + chemistry model</p><p className="text-xs text-fg/60">PM2.5 {((aq as any).source?.modelPm25 ?? c.pm2_5).toFixed(0)}</p></div>
               </div>
               <p className="text-[11px] text-fg/50 mt-2">Station values are measured at one site (WAQI, US-EPA scale); the model is a grid-cell estimate, so they can differ.</p>
             </Card>
