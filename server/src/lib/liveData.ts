@@ -62,6 +62,13 @@ export async function getAirQuality(latN: number, lonN: number): Promise<any> {
   const pm2_5 = station?.pm25Index != null ? pm25FromIndex(station.pm25Index) : c.pm2_5, pm10 = c.pm10 ?? 0, no2 = c.nitrogen_dioxide ?? 0,
     o3 = c.ozone ?? 0, so2 = c.sulphur_dioxide ?? 0, co = c.carbon_monoxide ?? 0, usAqi = station ? station.aqi : c.us_aqi;
 
+  // Bias-correct the model forecast to the measured station: scale every hour by (station / model) at the current hour.
+  const clamp = (r: number) => Math.min(2.5, Math.max(0.4, r));
+  const aqiRatio = station && modelUsAqi > 0 ? clamp(station.aqi / modelUsAqi) : 1;
+  const pmRatio = station && modelPm25 > 0 ? clamp(pm2_5 / modelPm25) : 1;
+  const scale = (arr: Array<number | null> | undefined, k: number, dp: number) =>
+    (arr ?? []).map((v) => (v == null ? v : k === 1 ? v : +(v * k).toFixed(dp)));
+
   const { naqi, category, dominantPollutant } = calcCPCBNAQI(pm2_5, pm10, no2, o3, co, so2);
   const ratio = (v: number, g: number) => (v > 0 ? +(v / g).toFixed(1) : null);
 
@@ -73,7 +80,7 @@ export async function getAirQuality(latN: number, lonN: number): Promise<any> {
       time: c.time,
     },
     source: station
-      ? { type: 'ground-station', station: station.name, distanceKm: station.distKm, time: station.time, modelUsAqi, modelPm25 }
+      ? { type: 'ground-station', station: station.name, distanceKm: station.distKm, hourlyAdjusted: true, aqiScale: +aqiRatio.toFixed(2), time: station.time, modelUsAqi, modelPm25 }
       : { type: 'model', note: 'Open-Meteo model estimate (no nearby ground station)' },
     naqi: { value: naqi, category, dominantPollutant },
     usCategory: usAqiCategory(usAqi),
@@ -87,9 +94,9 @@ export async function getAirQuality(latN: number, lonN: number): Promise<any> {
     },
     whoGuidelines: WHO_GUIDELINES,
     hourly: {
-      time: data.hourly.time, pm2_5: data.hourly.pm2_5, pm10: data.hourly.pm10,
+      time: data.hourly.time, pm2_5: scale(data.hourly.pm2_5, pmRatio, 1), pm10: data.hourly.pm10,
       no2: data.hourly.nitrogen_dioxide, o3: data.hourly.ozone, so2: data.hourly.sulphur_dioxide,
-      co: data.hourly.carbon_monoxide, usAqi: data.hourly.us_aqi, europeanAqi: data.hourly.european_aqi,
+      co: data.hourly.carbon_monoxide, usAqi: scale(data.hourly.us_aqi, aqiRatio, 0), europeanAqi: data.hourly.european_aqi,
       dust: data.hourly.dust, uvIndex: data.hourly.uv_index,
     },
     meta: {
