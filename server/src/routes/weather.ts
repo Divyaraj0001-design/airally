@@ -3,6 +3,8 @@ import axios from 'axios';
 import { aqCache, weatherCacheKey } from '../lib/cache';
 
 const router = express.Router();
+/** Last good response per location, served if Open-Meteo is rate-limiting us. */
+const staleWeather = new Map<string, object>();
 
 router.get('/', async (req, res) => {
   const { lat, lon } = req.query;
@@ -39,7 +41,15 @@ router.get('/', async (req, res) => {
       wind_speed_unit: 'kmh',
     };
 
-    const response = await axios.get(url, { params, timeout: 10000 });
+    let response;
+    try {
+      response = await axios.get(url, { params, timeout: 10000 });
+    } catch (e: any) {
+      if (e?.response?.status !== 429) throw e;
+      // Shared hosting IPs get rate-limited by Open-Meteo: wait briefly and retry once.
+      await new Promise((r) => setTimeout(r, 1500));
+      response = await axios.get(url, { params, timeout: 10000 });
+    }
     const data = response.data;
 
     const result = {
@@ -83,9 +93,12 @@ router.get('/', async (req, res) => {
     };
 
     aqCache.set(cacheKey, result);
+    staleWeather.set(cacheKey, result);
     return res.json(result);
   } catch (err: any) {
     console.error('[Weather Error]', err?.message);
+    const stale = staleWeather.get(cacheKey);
+    if (stale) return res.json({ ...(stale as object), cached: true, stale: true });
     return res.status(502).json({
       error: 'Failed to fetch weather data from Open-Meteo',
       detail: err?.message,

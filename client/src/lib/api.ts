@@ -9,12 +9,41 @@ async function fetchWithError(url: string, opts?: RequestInit) {
   return r.json();
 }
 
+/** Direct browser call to Open-Meteo (user's own IP) — fallback when the server is rate-limited. Same shape as /api/weather. */
+async function weatherDirect(lat: number, lon: number) {
+  const qs = new URLSearchParams({
+    latitude: lat.toFixed(4), longitude: lon.toFixed(4),
+    current: 'temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,wind_gusts_10m,precipitation,surface_pressure,cloud_cover,visibility,is_day,weather_code',
+    hourly: 'temperature_2m,relative_humidity_2m,wind_speed_10m,wind_direction_10m,precipitation_probability,precipitation,surface_pressure,cloud_cover,visibility,boundary_layer_height,weather_code',
+    forecast_days: '5', past_days: '1', timezone: 'auto', wind_speed_unit: 'kmh',
+  });
+  const d = await fetchWithError(`https://api.open-meteo.com/v1/forecast?${qs}`);
+  const c = d.current, h = d.hourly;
+  return {
+    current: {
+      temperature: c.temperature_2m, humidity: c.relative_humidity_2m, apparentTemperature: c.apparent_temperature,
+      windSpeed: c.wind_speed_10m, windDirection: c.wind_direction_10m, windGusts: c.wind_gusts_10m,
+      precipitation: c.precipitation, pressure: c.surface_pressure, cloudCover: c.cloud_cover,
+      visibility: c.visibility, isDay: c.is_day, weatherCode: c.weather_code, time: c.time,
+    },
+    hourly: {
+      time: h.time, temperature: h.temperature_2m, humidity: h.relative_humidity_2m, windSpeed: h.wind_speed_10m,
+      windDirection: h.wind_direction_10m, precipProbability: h.precipitation_probability, precipitation: h.precipitation,
+      pressure: h.surface_pressure, cloudCover: h.cloud_cover, visibility: h.visibility,
+      boundaryLayerHeight: h.boundary_layer_height, weatherCode: h.weather_code,
+    },
+    units: d.current_units,
+    meta: { latitude: d.latitude, longitude: d.longitude, timezone: d.timezone, fetchedAt: new Date().toISOString() },
+    cached: false,
+  };
+}
+
 export const api = {
   health: () => fetchWithError(`${BASE}/api/health`),
   airQuality: (lat: number, lon: number) =>
     fetchWithError(`${BASE}/api/air-quality?lat=${lat}&lon=${lon}`),
   weather: (lat: number, lon: number) =>
-    fetchWithError(`${BASE}/api/weather?lat=${lat}&lon=${lon}`),
+    fetchWithError(`${BASE}/api/weather?lat=${lat}&lon=${lon}`).catch(() => weatherDirect(lat, lon)),
   geocodeSearch: (q: string, language = 'en') =>
     fetchWithError(`${BASE}/api/geocode/search?q=${encodeURIComponent(q)}&language=${language}`),
   geocodeReverse: (lat: number, lon: number) =>
